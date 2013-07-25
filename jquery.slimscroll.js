@@ -102,6 +102,9 @@
             // check if we should scroll existing instance
             if ($.isPlainObject(options))
             {
+              var isWheel = false;
+              var isJump = true;
+              
               // Pass height: auto to an existing slimscroll object to force a resize after contents have changed
               if ( 'height' in options && options.height == 'auto' ) {
                 me.parent().css('height', 'auto');
@@ -129,9 +132,18 @@
                 me.unwrap();
                 return;
               }
-
+              else if ('start' in options)
+              {
+                  if(options.start == 'bottom') // If the content be updated and the start option was 'bottom', we will scroll until the bottom. It works only if the scroll is on the bottom at the moment of the update
+                  {
+                     offset = 0;
+                     isWheel = true
+                     isJump = undefined;
+                  }
+              }
+              
               // scroll content by the given offset
-              scrollContent(offset, false, true);
+              scrollContent(offset, isWheel, isJump);
             }
 
             return;
@@ -154,8 +166,10 @@
         me.css({
           overflow: 'hidden',
           width: o.width,
-          height: o.height
+          height: o.height,
+          visibility: 'hidden'
         });
+        setTimeout(function(){ me.css({ visibility: 'visible' }); }); // Sometimes the content of 'me' be displayed before then height be defined. It's beter to wait and display the content after the HTML rendering
 
         // create scrollbar rail
         var rail = $(divS)
@@ -266,7 +280,7 @@
         if (o.start === 'bottom')
         {
           // scroll content to bottom
-          bar.css({ top: me.outerHeight() - bar.outerHeight() });
+          setTimeout(function(){ bar.css({ top: me.outerHeight() - bar.outerHeight() }); }); // In case the content of 'me' is powered in javascript, 'bar' is not always created at this point and his outerHeight is egal 0. Need to wait that the rendering of the content of 'me' be finish. That's why we use here a timeout.
           scrollContent(0, true);
         }
         else if (o.start !== 'top')
